@@ -78,19 +78,26 @@ async function mainInteractive(){
   }
   // If we're running inside the library repo locally, copy it instead of cloning
   const gitTop = runCapture('git', ['rev-parse', '--show-toplevel']);
+  console.log('debug: gitTop=', gitTop);
   if(gitTop){
     try{
       const localPkgPath = path.join(gitTop, 'package.json');
+      console.log('debug: localPkgPath=', localPkgPath, 'exists=', fs.existsSync(localPkgPath));
       if(fs.existsSync(localPkgPath)){
         const localPkg = JSON.parse(fs.readFileSync(localPkgPath, 'utf8'));
+        console.log('debug: localPkg.name=', localPkg.name);
         if(localPkg.name && localPkg.name.includes('ai-skill-library')){
           console.log('Detected local ai-skill-library repo at', gitTop, '— copying into', aiDest);
-          fs.cpSync(gitTop, aiDest, { recursive: true, force: true });
-          // remove node_modules if accidentally copied
-          try{ fs.rmSync(path.join(aiDest,'node_modules'), { recursive: true, force: true }); }catch(e){}
+          try{
+            fs.cpSync(gitTop, aiDest, { recursive: true, force: true });
+            // remove node_modules if accidentally copied
+            try{ fs.rmSync(path.join(aiDest,'node_modules'), { recursive: true, force: true }); }catch(e){}
+          }catch(copyErr){
+            console.error('Failed to copy local repo:', copyErr && copyErr.message);
+          }
         }
       }
-    }catch(e){ /* fallthrough to clone below if needed */ }
+    }catch(e){ console.error('local copy check failed:', e && e.message); }
   }
 
   if(!fs.existsSync(aiDest) && repoUrl){
