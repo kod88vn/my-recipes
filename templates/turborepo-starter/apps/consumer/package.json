@@ -7,6 +7,7 @@
     "node-fetch": "^3.3.1"
   },
   "scripts": {
-    "dev": "node start.js"
+    "dev": "node start.js",
+    "link-skills": "sh link-skills.sh"
   }
 }
