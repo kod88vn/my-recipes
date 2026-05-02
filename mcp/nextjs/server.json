@@ -2,6 +2,7 @@
   "id": "nextjs",
   "name": "Next.js MCP",
   "category": "framework",
+  "stability": "stable",
   "description": "Framework-aware tooling for Next.js projects, routing, app structure, and framework-specific diagnostics.",
   "tags": ["nextjs", "react", "framework", "web"],
   "transport": {

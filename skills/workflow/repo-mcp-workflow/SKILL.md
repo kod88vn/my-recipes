@@ -22,6 +22,18 @@ See:
 4. Use `skill-lib mcp doctor` to verify that config and commands line up.
 5. Keep skills and MCP config aligned when changing scaffolds.
 
+## Reusable role prompts
+
+Use these companion prompt assets when dispatching subagents for multi-step changes:
+
+- `implementer-prompt.md` for making minimal code changes
+- `spec-reviewer-prompt.md` for requirement and acceptance checks
+- `quality-reviewer-prompt.md` for regression and code-quality review
+
+This keeps implementation and review roles consistent across sessions.
+
+For UI-heavy tasks, use `subagent-playwright-workflow` to keep browser reproduction, code changes, and regression checks isolated per subagent.
+
 ## Important distinction
 
 - MCP tools provide capabilities.

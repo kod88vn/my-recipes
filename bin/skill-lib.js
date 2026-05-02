@@ -56,18 +56,19 @@ function printMcpTable(servers) {
 
   const idW = Math.max(2, ...servers.map((s) => s.id.length)) + 2;
   const catW = Math.max(8, ...servers.map((s) => (s.category || "").length)) + 2;
+  const stabilityW = Math.max(9, ...servers.map((s) => (s.stability || "stable").length)) + 2;
 
   console.log(
-    `\n${BOLD}${pad("ID", idW)}${pad("CATEGORY", catW)}DESCRIPTION${RESET}`
+    `\n${BOLD}${pad("ID", idW)}${pad("CATEGORY", catW)}${pad("STABILITY", stabilityW)}DESCRIPTION${RESET}`
   );
-  console.log("─".repeat(idW + catW + 50));
+  console.log("─".repeat(idW + catW + stabilityW + 50));
 
   for (const server of servers) {
     const desc = server.description.length > 70
       ? server.description.slice(0, 67) + "..."
       : server.description;
     console.log(
-      `${CYAN}${pad(server.id, idW)}${RESET}${YELLOW}${pad(server.category || "", catW)}${RESET}${desc}`
+      `${CYAN}${pad(server.id, idW)}${RESET}${YELLOW}${pad(server.category || "", catW)}${RESET}${pad(server.stability || "stable", stabilityW)}${desc}`
     );
   }
   console.log(`\n${DIM}${servers.length} MCP server(s)${RESET}\n`);
@@ -250,6 +251,7 @@ mcp
     console.log(`\n${BOLD}${CYAN}${server.name}${RESET}  ${DIM}(${server.id})${RESET}`);
     console.log(server.description);
     if (server.category) console.log(`${DIM}Category: ${server.category}${RESET}`);
+    if (server.stability) console.log(`${DIM}Stability: ${server.stability}${RESET}`);
     if (server.tags?.length) console.log(`${DIM}Tags: ${server.tags.join(", ")}${RESET}`);
     if (server.transport) {
       const args = Array.isArray(server.transport.args) ? server.transport.args.join(" ") : "";
@@ -309,10 +311,12 @@ mcp
       console.log(`${DIM}No MCP bundles found.${RESET}`);
       return;
     }
-    console.log(`\n${BOLD}BUNDLE               SERVERS${RESET}`);
-    console.log("─".repeat(60));
+    const idW = Math.max(6, ...bundles.map((bundle) => bundle.id.length)) + 2;
+    const channelW = Math.max(7, ...bundles.map((bundle) => (bundle.channel || "stable").length)) + 2;
+    console.log(`\n${BOLD}${pad("BUNDLE", idW)}${pad("CHANNEL", channelW)}SERVERS${RESET}`);
+    console.log("─".repeat(idW + channelW + 40));
     bundles.forEach((bundle) => {
-      console.log(`${CYAN}${pad(bundle.id, 20)}${RESET}${(bundle.servers || []).join(", ")}`);
+      console.log(`${CYAN}${pad(bundle.id, idW)}${RESET}${pad(bundle.channel || "stable", channelW)}${(bundle.servers || []).join(", ")}`);
     });
     console.log();
   });

@@ -2,6 +2,7 @@
   "id": "context7",
   "name": "Context7 MCP",
   "category": "documentation",
+  "stability": "stable",
   "description": "Retrieves focused library and framework documentation context for coding tasks.",
   "tags": ["docs", "reference", "lookup", "coding"],
   "transport": {

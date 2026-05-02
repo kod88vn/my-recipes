@@ -2,6 +2,7 @@
   "id": "playwright",
   "name": "Playwright MCP",
   "category": "browser-automation",
+  "stability": "stable",
   "description": "Browser automation, page inspection, screenshots, and UI verification for coding workflows.",
   "tags": ["browser", "ui", "e2e", "testing"],
   "transport": {
