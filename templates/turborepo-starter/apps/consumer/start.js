@@ -6,9 +6,12 @@ const API = process.env.SKILL_API || 'http://127.0.0.1:3456';
 async function main(){
   console.log('Fetching skills from', API);
   const r = await fetch(`${API}/skills`);
-  const skills = await r.json();
+  const skillsPayload = await r.json();
+  const skills = Array.isArray(skillsPayload)
+    ? skillsPayload
+    : (skillsPayload && Array.isArray(skillsPayload.skills) ? skillsPayload.skills : []);
   console.log('Skills:');
-  (skills || []).forEach(s => console.log('-', s.name, `(${s.category})`));
+  skills.forEach(s => console.log('-', s.name, `(${s.category})`));
 
   console.log('\nFetching tools (ollama format)');
   const r2 = await fetch(`${API}/export?format=ollama`);

@@ -2,8 +2,9 @@
   "name": "apps-consumer",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "dependencies": {
-    "ai-skill-library": "workspace:*",
+    "ai-skill-library": "file:../ai-skill-library",
     "node-fetch": "^3.3.1"
   },
   "scripts": {

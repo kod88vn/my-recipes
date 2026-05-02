@@ -12,11 +12,11 @@ Required outputs (for a valid consumer monorepo):
   - `skills/` directory (may be empty but must exist)
   - `ui/` directory containing `app.py` (Streamlit UI)
 - `apps/<consumer>` (e.g., `apps/virtual-tutor`) present and containing:
-  - `link-skills.sh` script at app root (to symlink skills into `.github/skills`), OR
+  - `link-skills.sh` script at app root (to symlink skills into root `.github/skills`), OR
   - a `package.json` script entry named `link-skills` that runs the script
 
 Operational expectations:
-- After scaffolding, running the consumer `link-skills.sh` should create `.github/skills` as a symlink pointing to `apps/ai-skill-library/skills`.
+- After scaffolding, running the consumer `link-skills.sh` should create root `.github/skills` as a symlink pointing to `apps/ai-skill-library/skills`.
 - The CLI should attempt `watt resolve` if `watt` is available, otherwise fallback to `git clone` for `ai-skill-library`.
 - The CLI should auto-run the `link-skills` helper for the consumer app unless explicitly skipped.
 

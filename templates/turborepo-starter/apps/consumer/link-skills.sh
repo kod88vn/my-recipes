@@ -7,8 +7,9 @@ ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # source (library) is at ../ai-skill-library/skills
 SKILLS_SRC="$ROOT_DIR/../ai-skill-library/skills"
-# destination is ./ .github/skills inside the consumer app
-SKILLS_DEST="$ROOT_DIR/.github/skills"
+# destination must be at monorepo root .github/skills so Copilot sees it
+MONOREPO_ROOT="$(cd "$ROOT_DIR/../.." && pwd)"
+SKILLS_DEST="$MONOREPO_ROOT/.github/skills"
 
 echo "Linking $SKILLS_SRC -> $SKILLS_DEST"
 mkdir -p "$(dirname "$SKILLS_DEST")"

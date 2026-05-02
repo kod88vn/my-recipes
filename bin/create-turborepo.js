@@ -2,6 +2,10 @@
 import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const packageRoot = path.resolve(scriptDir, '..');
 
 function run(cmd, args, opts = {}){
   const r = spawnSync(cmd, args, { stdio: 'inherit', ...opts });
@@ -16,24 +20,39 @@ function runCapture(cmd, args, opts = {}){
 
 const readline = await import('readline');
 
+function parseArgs(argv){
+  const options = {
+    yes: false,
+    appName: null,
+    target: null,
+    useWatt: null,
+    doInstall: null,
+  };
+
+  for(let i = 0; i < argv.length; i++){
+    const arg = argv[i];
+    if(arg === '--yes') options.yes = true;
+    else if(arg === '--app' && argv[i + 1]) options.appName = argv[++i];
+    else if(arg === '--target' && argv[i + 1]) options.target = argv[++i];
+    else if(arg === '--use-watt') options.useWatt = true;
+    else if(arg === '--no-watt') options.useWatt = false;
+    else if(arg === '--install') options.doInstall = true;
+    else if(arg === '--no-install') options.doInstall = false;
+  }
+
+  return options;
+}
+
 async function question(prompt, def){
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const q = await new Promise(resolve => rl.question(`${prompt}${def ? ` (${def})` : ''}: `, ans => { rl.close(); resolve(ans); }));
   return (q || def || '').trim();
 }
 
-async function mainInteractive(){
-  const appName = await question('Name of the consumer app', 'consumer');
-  const target = await question('Target folder for monorepo', `${appName}-monorepo`);
-  const useWattAns = await question('Use watt resolve when available? (y/n)', 'y');
-  const doInstallAns = await question('Run `npm install` after scaffolding? (y/n)', 'n');
-
-  const useWatt = /^y/i.test(useWattAns);
-  const doInstall = /^y/i.test(doInstallAns);
-
+function scaffold({ appName, target, useWatt, doInstall }){
   const cwd = process.cwd();
   const targetPath = path.resolve(cwd, target);
-  const templatePath = path.resolve(cwd, 'templates', 'turborepo-starter');
+  const templatePath = path.join(packageRoot, 'templates', 'turborepo-starter');
 
   console.log('Scaffolding Turborepo at', targetPath);
   fs.mkdirSync(targetPath, { recursive: true });
@@ -43,6 +62,11 @@ async function mainInteractive(){
     try{
       fs.cpSync(templatePath, targetPath, { recursive: true, force: true });
       console.log('Copied template from', templatePath);
+      // Template contains apps/consumer; remove it when user selected a custom app name.
+      const defaultConsumer = path.join(targetPath, 'apps', 'consumer');
+      if(appName !== 'consumer' && fs.existsSync(defaultConsumer)){
+        fs.rmSync(defaultConsumer, { recursive: true, force: true });
+      }
     }catch(e){ console.error('Failed to copy template:', e.message); }
   } else {
     console.log('Template not found; writing minimal package.json');
@@ -52,10 +76,23 @@ async function mainInteractive(){
 
   // create apps dir and copy consumer starter
   fs.mkdirSync(path.join(targetPath,'apps'), { recursive: true });
-  const consumerTemplate = path.resolve(cwd, 'templates', 'turborepo-starter', 'apps', 'consumer');
+  const consumerTemplate = path.join(packageRoot, 'templates', 'turborepo-starter', 'apps', 'consumer');
   const consumerDest = path.join(targetPath, 'apps', appName);
   if(fs.existsSync(consumerTemplate)){
     fs.cpSync(consumerTemplate, consumerDest, { recursive: true, force: true });
+    // Keep workspace package names unique and meaningful.
+    const consumerPkg = path.join(consumerDest, 'package.json');
+    if(fs.existsSync(consumerPkg)){
+      try{
+        const pkg = JSON.parse(fs.readFileSync(consumerPkg, 'utf8'));
+        pkg.name = appName;
+        pkg.type = pkg.type || 'module';
+        if(pkg.dependencies && pkg.dependencies['ai-skill-library'] === 'workspace:*'){
+          pkg.dependencies['ai-skill-library'] = 'file:../ai-skill-library';
+        }
+        fs.writeFileSync(consumerPkg, JSON.stringify(pkg, null, 2));
+      }catch(e){ /* leave template package.json as-is */ }
+    }
     console.log('Created consumer app at', consumerDest);
   } else {
     // write minimal consumer
@@ -66,7 +103,7 @@ async function mainInteractive(){
   }
 
   // clone this repo into apps/ai-skill-library
-  const repoUrl = runCapture('git', ['config', '--get', 'remote.origin.url']) || null;
+  const repoUrl = runCapture('git', ['config', '--get', 'remote.origin.url'], { cwd: packageRoot }) || null;
   const aiDest = path.join(targetPath, 'apps', 'ai-skill-library');
   if(useWatt){
     const hasWatt = runCapture('watt', ['--version']);
@@ -77,28 +114,21 @@ async function mainInteractive(){
     }
   }
   // If we're running inside the library repo locally, copy it instead of cloning
-  const gitTop = runCapture('git', ['rev-parse', '--show-toplevel']);
-  console.log('debug: gitTop=', gitTop);
-  if(gitTop){
-    try{
-      const localPkgPath = path.join(gitTop, 'package.json');
-      console.log('debug: localPkgPath=', localPkgPath, 'exists=', fs.existsSync(localPkgPath));
-      if(fs.existsSync(localPkgPath)){
-        const localPkg = JSON.parse(fs.readFileSync(localPkgPath, 'utf8'));
-        console.log('debug: localPkg.name=', localPkg.name);
-        if(localPkg.name && localPkg.name.includes('ai-skill-library')){
-          console.log('Detected local ai-skill-library repo at', gitTop, '— copying into', aiDest);
-          try{
-            fs.cpSync(gitTop, aiDest, { recursive: true, force: true });
-            // remove node_modules if accidentally copied
-            try{ fs.rmSync(path.join(aiDest,'node_modules'), { recursive: true, force: true }); }catch(e){}
-          }catch(copyErr){
-            console.error('Failed to copy local repo:', copyErr && copyErr.message);
-          }
+  try{
+    const localPkgPath = path.join(packageRoot, 'package.json');
+    if(fs.existsSync(localPkgPath)){
+      const localPkg = JSON.parse(fs.readFileSync(localPkgPath, 'utf8'));
+      if(localPkg.name && localPkg.name.includes('ai-skill-library')){
+        console.log('Detected local ai-skill-library repo at', packageRoot, '— copying into', aiDest);
+        try{
+          fs.cpSync(packageRoot, aiDest, { recursive: true, force: true });
+          try{ fs.rmSync(path.join(aiDest,'node_modules'), { recursive: true, force: true }); }catch(e){}
+        }catch(copyErr){
+          console.error('Failed to copy local repo:', copyErr && copyErr.message);
         }
       }
-    }catch(e){ console.error('local copy check failed:', e && e.message); }
-  }
+    }
+  }catch(e){ console.error('local copy check failed:', e && e.message); }
 
   if(!fs.existsSync(aiDest) && repoUrl){
     console.log('Cloning', repoUrl, 'to', aiDest);
@@ -140,5 +170,31 @@ async function mainInteractive(){
   }
 }
 
+async function main(){
+  const options = parseArgs(process.argv.slice(2));
+  const appName = options.appName || (options.yes ? 'consumer' : await question('Name of the consumer app', 'consumer'));
+  const target = options.target || (options.yes ? `${appName}-monorepo` : await question('Target folder for monorepo', `${appName}-monorepo`));
+
+  let useWatt = options.useWatt;
+  if(useWatt == null){
+    if(options.yes) useWatt = true;
+    else {
+      const useWattAns = await question('Use watt resolve when available? (y/n)', 'y');
+      useWatt = /^y/i.test(useWattAns);
+    }
+  }
+
+  let doInstall = options.doInstall;
+  if(doInstall == null){
+    if(options.yes) doInstall = false;
+    else {
+      const doInstallAns = await question('Run `npm install` after scaffolding? (y/n)', 'n');
+      doInstall = /^y/i.test(doInstallAns);
+    }
+  }
+
+  scaffold({ appName, target, useWatt, doInstall });
+}
+
 // entry
-mainInteractive().catch(err => { console.error(err); process.exit(1); });
+main().catch(err => { console.error(err); process.exit(1); });

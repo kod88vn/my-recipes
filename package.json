@@ -8,7 +8,8 @@
     "skills",
     "bin",
     "lib",
-    "scripts"
+    "scripts",
+    "templates"
   ],
   "bin": {
     "skill-lib": "bin/skill-lib.js",

@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 function exists(p){ try{ return fs.existsSync(p); } catch(e){ return false } }
+function isSymlink(p){ try{ return fs.lstatSync(p).isSymbolicLink(); } catch(e){ return false } }
 
 function check(root){
   const report = { ok: true, missing: [] };
@@ -45,6 +46,15 @@ function check(root){
       }catch(e){}
     }
     if(!hasLinkScript && !hasPkgLink){ report.ok = false; report.missing.push(`consumer app ${children[0]} missing link-skills script or npm script`); }
+  }
+
+  const rootSkillsLink = path.join(root, '.github', 'skills');
+  if(!exists(rootSkillsLink)){
+    report.ok = false;
+    report.missing.push('root .github/skills (expected symlink)');
+  } else if(!isSymlink(rootSkillsLink)){
+    report.ok = false;
+    report.missing.push('root .github/skills is not a symlink');
   }
 
   return report;
