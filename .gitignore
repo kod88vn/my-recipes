@@ -1,3 +1,6 @@
 node_modules/
 .github/skills/
 *.log
+__pycache__/
+*.pyc
+.streamlit/

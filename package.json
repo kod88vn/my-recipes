@@ -14,7 +14,10 @@
     "skill-lib": "bin/skill-lib.js"
   },
   "scripts": {
-    "postinstall": "node scripts/install.js"
+    "postinstall": "node scripts/install.js",
+    "serve": "node bin/skill-lib.js serve",
+    "ui": "streamlit run ui/app.py",
+    "dev": "node -e \"require('child_process').spawn('node',['bin/skill-lib.js','serve'],{stdio:'inherit',shell:true}); require('child_process').spawn('streamlit',['run','ui/app.py'],{stdio:'inherit',shell:true})\""
   },
   "dependencies": {
     "commander": "^13.1.0"
