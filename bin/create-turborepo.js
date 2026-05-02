@@ -198,6 +198,104 @@ function scaffold({ appName, target, useWatt, doInstall, mcp, mcpBundles, useMcp
     });
   }
 
+  // Generate .github/copilot-instructions.md with MCP server guidance
+  const githubDir = path.join(targetPath, '.github');
+  fs.mkdirSync(githubDir, { recursive: true });
+  const copilotInstructionsPath = path.join(githubDir, 'copilot-instructions.md');
+  const mcpServerLines = mcpSelection.mcpServers.map((id) => {
+    const srv = loadAllMcpServers().find((s) => s.id === id);
+    if (!srv) return `- **${id}**: available via MCP`;
+    return `- **${srv.name}** (\`${id}\`): ${srv.description}`;
+  });
+  const mcpSection = mcpSelection.mcpServers.length > 0
+    ? `## MCP Servers\n\nThe following MCP servers are configured in \`.vscode/mcp.json\`:\n\n${mcpServerLines.join('\n')}\n\nPrefer these servers for their respective tasks before falling back to general knowledge.`
+    : '## MCP Servers\n\nNo MCP servers are configured for this project.';
+  const copilotInstructions = `# GitHub Copilot Instructions\n\nThis is a scaffolded AI skill library workspace.\n\n${mcpSection}\n\n## Skills\n\nSkills are available in \`.github/skills/\`. Use them when working on tasks that fall within their domains.\n`;
+  fs.writeFileSync(copilotInstructionsPath, copilotInstructions);
+  console.log('Wrote .github/copilot-instructions.md with MCP server guidance');
+
+  // Write a project-specific README
+  const mcpReadmeLines = mcpSelection.mcpServers.map((id) => {
+    const srv = loadAllMcpServers().find((s) => s.id === id);
+    return srv ? `- **${srv.name}** (\`${id}\`): ${srv.description}` : `- \`${id}\``;
+  });
+  const readmePath = path.join(targetPath, 'README.md');
+  fs.writeFileSync(readmePath, `# ${appName}
+
+This project was scaffolded by \`create-turborepo\` from the [ai-skill-library](https://github.com/kod/my-recipes).
+
+## Structure
+
+\`\`\`
+${path.basename(targetPath)}/
+├── apps/
+│   ├── ai-skill-library/   # skill server (copied from source repo)
+│   └── ${appName}/         # consumer app
+├── .github/
+│   ├── copilot-instructions.md
+│   └── skills -> apps/ai-skill-library/skills
+├── .skill-lib/
+│   └── project.json        # project metadata
+└── .vscode/
+    └── mcp.json            # MCP server config
+\`\`\`
+
+## Getting started
+
+\`\`\`bash
+# start the skill server
+node apps/ai-skill-library/bin/skill-lib.js serve
+
+# in another terminal, start the consumer app
+npm --prefix apps/${appName} run dev
+\`\`\`
+
+## MCP servers
+
+${mcpReadmeLines.length > 0 ? mcpReadmeLines.join('\n') : '_None configured._'}
+
+Configured in \`.vscode/mcp.json\`. Reload VS Code to activate.
+
+## Skills
+
+Available under \`.github/skills/\`. Copilot will discover them automatically.
+`);
+  console.log('Wrote project README.md');
+
+  // Write .gitignore
+  fs.writeFileSync(path.join(targetPath, '.gitignore'), [
+    '# dependencies',
+    'node_modules/',
+    '',
+    '# build outputs',
+    'dist/',
+    'build/',
+    '.next/',
+    '.turbo/',
+    'out/',
+    '',
+    '# environment',
+    '.env',
+    '.env.local',
+    '.env.*.local',
+    '',
+    '# logs',
+    '*.log',
+    'npm-debug.log*',
+    '',
+    '# OS',
+    '.DS_Store',
+    'Thumbs.db',
+    '',
+    '# editor',
+    '.vscode/settings.json',
+    '.idea/',
+    '',
+    '# scaffolded library (managed by create-turborepo, not versioned here)',
+    'apps/ai-skill-library/',
+  ].join('\n') + '\n');
+  console.log('Wrote .gitignore');
+
   console.log('\nDone. Next steps:');
   console.log('  cd', targetPath);
   if(doInstall) console.log('  npm install');

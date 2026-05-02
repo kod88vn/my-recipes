@@ -1,5 +1,5 @@
 {
   "command": "npx",
-  "args": ["ctx7", "setup"],
+  "args": ["-y", "@upstash/context7-mcp"],
   "env": {}
 }
