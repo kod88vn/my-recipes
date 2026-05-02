@@ -11,7 +11,8 @@
     "scripts"
   ],
   "bin": {
-    "skill-lib": "bin/skill-lib.js"
+    "skill-lib": "bin/skill-lib.js",
+    "create-turborepo": "bin/create-turborepo.js"
   },
   "scripts": {
     "postinstall": "node scripts/install.js",
