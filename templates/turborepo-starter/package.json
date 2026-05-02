@@ -1,0 +1,15 @@
+{
+  "name": "turborepo-starter",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": ["packages/*","apps/*"],
+  "scripts": {
+    "install": "npm install",
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "turbo": "^1.5.0"
+  }
+}

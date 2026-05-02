@@ -1,0 +1,12 @@
+{
+  "name": "apps-consumer",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "ai-skill-library": "workspace:*",
+    "node-fetch": "^3.3.1"
+  },
+  "scripts": {
+    "dev": "node start.js"
+  }
+}
