@@ -76,6 +76,23 @@ async function mainInteractive(){
       if(!ok) console.warn('watt failed, will try git clone');
     }
   }
+  // If we're running inside the library repo locally, copy it instead of cloning
+  const gitTop = runCapture('git', ['rev-parse', '--show-toplevel']);
+  if(gitTop){
+    try{
+      const localPkgPath = path.join(gitTop, 'package.json');
+      if(fs.existsSync(localPkgPath)){
+        const localPkg = JSON.parse(fs.readFileSync(localPkgPath, 'utf8'));
+        if(localPkg.name && localPkg.name.includes('ai-skill-library')){
+          console.log('Detected local ai-skill-library repo at', gitTop, '— copying into', aiDest);
+          fs.cpSync(gitTop, aiDest, { recursive: true, force: true });
+          // remove node_modules if accidentally copied
+          try{ fs.rmSync(path.join(aiDest,'node_modules'), { recursive: true, force: true }); }catch(e){}
+        }
+      }
+    }catch(e){ /* fallthrough to clone below if needed */ }
+  }
+
   if(!fs.existsSync(aiDest) && repoUrl){
     console.log('Cloning', repoUrl, 'to', aiDest);
     const ok = run('git', ['clone', repoUrl, aiDest]);
