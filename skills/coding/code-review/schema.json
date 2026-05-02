@@ -1,0 +1,29 @@
+{
+  "input": {
+    "type": "object",
+    "properties": {
+      "code":     { "type": "string",  "description": "Source code to review" },
+      "language": { "type": "string",  "description": "Programming language, e.g. typescript, python" },
+      "focus":    { "type": "string",  "enum": ["all", "correctness", "security", "style", "maintainability"], "description": "Review focus area (default: all)" }
+    },
+    "required": ["code"]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "findings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "severity": { "type": "string", "enum": ["critical", "major", "minor", "suggestion"] },
+            "line":     { "type": "integer" },
+            "message":  { "type": "string" },
+            "fix":      { "type": "string" }
+          }
+        }
+      },
+      "summary": { "type": "string" }
+    }
+  }
+}

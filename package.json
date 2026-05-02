@@ -1,0 +1,22 @@
+{
+  "name": "ai-skill-library",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Manage and share VS Code Copilot agent SKILL.md files across projects",
+  "type": "module",
+  "files": [
+    "skills",
+    "bin",
+    "lib",
+    "scripts"
+  ],
+  "bin": {
+    "skill-lib": "bin/skill-lib.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "dependencies": {
+    "commander": "^13.1.0"
+  }
+}

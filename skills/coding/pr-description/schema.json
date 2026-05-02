@@ -1,0 +1,18 @@
+{
+  "input": {
+    "type": "object",
+    "properties": {
+      "diff":    { "type": "string", "description": "Git diff output (git diff main...HEAD)" },
+      "commits": { "type": "string", "description": "Commit messages from the branch" },
+      "title":   { "type": "string", "description": "Draft or existing PR title" },
+      "issue":   { "type": "string", "description": "Linked issue or ticket description" }
+    }
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "description": { "type": "string", "description": "Full markdown PR description" },
+      "title":       { "type": "string", "description": "Suggested PR title" }
+    }
+  }
+}

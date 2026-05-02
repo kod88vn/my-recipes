@@ -1,0 +1,29 @@
+{
+  "input": {
+    "type": "object",
+    "properties": {
+      "query":   { "type": "string",  "description": "Topic or question to research" },
+      "depth":   { "type": "string",  "enum": ["quick", "thorough"], "description": "Research depth (default: quick)" },
+      "sources": { "type": "integer", "minimum": 1, "maximum": 10, "description": "Max number of sources to consult" }
+    },
+    "required": ["query"]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "summary": { "type": "string" },
+      "details": { "type": "string" },
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "url":   { "type": "string" },
+            "note":  { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
