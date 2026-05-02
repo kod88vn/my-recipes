@@ -82,6 +82,26 @@ async function mainInteractive(){
     if(!ok) console.warn('git clone failed; clone manually to', aiDest);
   }
 
+  // attempt to run link-skills script automatically (so consumer sees skills)
+  const linkScript = path.join(consumerDest, 'link-skills.sh');
+  if(fs.existsSync(linkScript)){
+    console.log('Running link-skills script to connect skills into consumer app');
+    const ok = run('sh', [linkScript], { cwd: consumerDest });
+    if(!ok) console.warn('link-skills.sh failed; you can run it manually via `npm --prefix', consumerDest, 'run link-skills`');
+  } else {
+    // fallback: try npm script
+    const pkgJson = path.join(consumerDest, 'package.json');
+    if(fs.existsSync(pkgJson)){
+      try{
+        const pkg = JSON.parse(fs.readFileSync(pkgJson,'utf8'));
+        if(pkg.scripts && pkg.scripts['link-skills']){
+          console.log('Running npm run link-skills to connect skills');
+          run('npm', ['--prefix', consumerDest, 'run', 'link-skills']);
+        }
+      }catch(e){ /* ignore */ }
+    }
+  }
+
   console.log('\nDone. Next steps:');
   console.log('  cd', targetPath);
   if(doInstall) console.log('  npm install');

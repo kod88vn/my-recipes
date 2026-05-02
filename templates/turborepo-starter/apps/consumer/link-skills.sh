@@ -2,15 +2,17 @@
 # Link ai-skill-library/skills into this project's .github/skills for Copilot
 set -e
 
+# Script is expected at apps/<consumer>/link-skills.sh
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
 
-SKILLS_SRC="$REPO_ROOT/ai-skill-library/skills"
-SKILLS_DEST="$REPO_ROOT/.github/skills"
+# source (library) is at ../ai-skill-library/skills
+SKILLS_SRC="$ROOT_DIR/../ai-skill-library/skills"
+# destination is ./ .github/skills inside the consumer app
+SKILLS_DEST="$ROOT_DIR/.github/skills"
 
 echo "Linking $SKILLS_SRC -> $SKILLS_DEST"
 mkdir -p "$(dirname "$SKILLS_DEST")"
-if [ -e "$SKILLS_DEST" ]; then
+if [ -L "$SKILLS_DEST" ] || [ -e "$SKILLS_DEST" ]; then
   echo "Removing existing $SKILLS_DEST"
   rm -rf "$SKILLS_DEST"
 fi
