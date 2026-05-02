@@ -210,7 +210,7 @@ function scaffold({ appName, target, useWatt, doInstall, mcp, mcpBundles, useMcp
   const mcpSection = mcpSelection.mcpServers.length > 0
     ? `## MCP Servers\n\nThe following MCP servers are configured in \`.vscode/mcp.json\`:\n\n${mcpServerLines.join('\n')}\n\nPrefer these servers for their respective tasks before falling back to general knowledge.`
     : '## MCP Servers\n\nNo MCP servers are configured for this project.';
-  const copilotInstructions = `# GitHub Copilot Instructions\n\nThis is a scaffolded AI skill library workspace.\n\n${mcpSection}\n\n## Skills\n\nSkills are available in \`.github/skills/\`. Use them when working on tasks that fall within their domains.\n`;
+  const copilotInstructions = `# GitHub Copilot Instructions\n\nThis is a scaffolded AI skill library workspace.\n\n${mcpSection}\n\n## Skills\n\nSkills are exposed in \`.github/skills/\` and sourced from \`apps/ai-skill-library/skills/\`.\n\n## Skill Update Workflow\n\nWhen asked to update skills, always treat \`apps/ai-skill-library\` as the canonical skill library and apply edits there first.\n\n- Source of truth for skill content: \`apps/ai-skill-library/skills/\`\n- Discovery path for Copilot: \`.github/skills/\` (linked to the library skills folder)\n- If a skill update is requested, inspect existing skills in the library, then modify the matching skill files under \`apps/ai-skill-library/skills/\`.\n- Prefer reusing existing workflow skills before creating new ones.\n`;
   fs.writeFileSync(copilotInstructionsPath, copilotInstructions);
   console.log('Wrote .github/copilot-instructions.md with MCP server guidance');
 
