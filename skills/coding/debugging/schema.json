@@ -1,0 +1,21 @@
+{
+  "input": {
+    "type": "object",
+    "properties": {
+      "description": { "type": "string", "description": "Description of the bug or unexpected behavior" },
+      "error":       { "type": "string", "description": "Error message or stack trace, if available" },
+      "file":        { "type": "string", "description": "File path(s) suspected to contain the bug" }
+    },
+    "required": ["description"]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "root_cause":        { "type": "string", "description": "Explanation of the root cause" },
+      "reproduction_test": { "type": "string", "description": "The failing test written to reproduce the bug" },
+      "fix":               { "type": "string", "description": "Description of the fix applied" },
+      "regressions":       { "type": "boolean", "description": "Whether any regressions were detected" }
+    },
+    "required": ["root_cause", "reproduction_test", "fix"]
+  }
+}
