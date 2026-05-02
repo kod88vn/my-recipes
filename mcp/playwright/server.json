@@ -1,0 +1,25 @@
+{
+  "id": "playwright",
+  "name": "Playwright MCP",
+  "category": "browser-automation",
+  "description": "Browser automation, page inspection, screenshots, and UI verification for coding workflows.",
+  "tags": ["browser", "ui", "e2e", "testing"],
+  "transport": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["@playwright/mcp@latest"]
+  },
+  "env": [
+    { "name": "PLAYWRIGHT_HEADLESS", "required": false }
+  ],
+  "capabilities": [
+    "browser.navigate",
+    "browser.click",
+    "browser.type",
+    "browser.screenshot"
+  ],
+  "clients": {
+    "vscode": { "supported": true, "configTemplate": "templates/vscode.json" },
+    "generic": { "supported": true }
+  }
+}

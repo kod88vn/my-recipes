@@ -1,0 +1,5 @@
+{
+  "command": "npx",
+  "args": ["@vercel/nextjs-mcp@latest"],
+  "env": {}
+}

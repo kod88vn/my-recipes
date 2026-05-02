@@ -1,0 +1,10 @@
+{
+  "coding-defaults": {
+    "description": "Default coding-focused MCP set for general software projects.",
+    "servers": ["context7", "playwright"]
+  },
+  "nextjs-defaults": {
+    "description": "Recommended MCP set for Next.js application work.",
+    "servers": ["context7", "playwright", "nextjs"]
+  }
+}

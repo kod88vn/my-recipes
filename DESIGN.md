@@ -10,10 +10,19 @@ Reference document for architecture decisions, data formats, and module contract
 2. **Human-readable source of truth** — skill definitions live as plain Markdown + JSON files in version control, not a database.
 3. **Zero runtime dependencies for core** — `lib/` and `bin/` use only Node built-ins + `commander`. No express, no zod, no ORM.
 4. **Scale-friendly tooling** — CLI + HTTP API + Streamlit dashboard so the library stays manageable as the skill count grows.
+5. **Composable capability stack** — skills, MCP servers, exported tool schemas, and project scaffolds must work together as one suite rather than separate products.
 
 ---
 
 ## Skill File Format
+
+### Source of truth vs `.github`
+
+- Main reusable content should live in the repository's primary content folders, not inside `.github`.
+- `.github` exists as a compatibility/discovery surface for Copilot and similar tooling.
+- When practical, `.github` should symlink to the main content rather than storing a second editable copy.
+- In this repo, `skills/` is the source of truth for skill content; `.github/skills` should be treated as a projection of that content.
+- The same rule should apply to other reusable AI workflow assets introduced later: keep canonical content in the main content area, and expose `.github` views via symlink or generated projection.
 
 ### Directory layout
 
@@ -63,6 +72,214 @@ skills/<category>/<name>/
 
 ---
 
+## MCP Integration Model
+
+### Why MCP belongs in this tool
+
+The library already models one important layer of agent behavior:
+
+- **Skills** describe *when* an agent should do something and *how it should reason about the task*.
+
+That is necessary but not sufficient for real coding workflows. Modern coding agents also need executable capability backends such as:
+
+- `context7` for documentation/context retrieval
+- `playwright` for browser automation and verification
+- `nextjs` or framework-specific servers for framework-aware tasks
+- other MCP servers for files, git, databases, search, containers, etc.
+
+So the suite should treat MCP as the **execution/tooling layer** underneath the skill layer.
+
+### Core model
+
+The system should be understood as four layers:
+
+1. **Skills** — agent-facing instructions and invocation guidance (`skills/.../SKILL.md`).
+2. **MCP servers** — executable tool providers the agent can call at runtime.
+3. **Exports / API** — normalized representations for external runtimes (`openai`, `ollama`, `anthropic`, `generic`).
+4. **Project scaffolds** — generated repos/monorepos that wire the right skills and MCP servers into a usable coding workspace.
+
+This means MCP servers are **not a replacement for skills** and **not the same artifact type** as skills:
+
+- A skill says: "use Playwright to validate a UI flow after making frontend changes".
+- An MCP server provides the actual Playwright browser tools.
+
+### Proposed repository shape
+
+Add a new top-level source-of-truth area for MCP server definitions:
+
+```text
+mcp/<server-id>/
+├── server.json        # normalized descriptor (required)
+├── README.md          # human usage notes (optional)
+└── templates/
+    ├── vscode.json    # workspace config fragment (optional)
+    ├── claude.json    # client-specific config fragment (optional)
+    └── env.example    # example env vars (optional)
+```
+
+Examples:
+
+```text
+mcp/context7/
+mcp/playwright/
+mcp/nextjs/
+```
+
+### MCP server descriptor shape
+
+Recommended minimal `server.json`:
+
+```json
+{
+  "id": "playwright",
+  "name": "Playwright MCP",
+  "category": "coding",
+  "description": "Browser automation and verification tools for UI workflows.",
+  "tags": ["browser", "ui", "testing", "e2e"],
+  "transport": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["@playwright/mcp@latest"]
+  },
+  "env": [
+    { "name": "PLAYWRIGHT_HEADLESS", "required": false }
+  ],
+  "capabilities": [
+    "browser.navigate",
+    "browser.click",
+    "browser.type",
+    "browser.screenshot"
+  ],
+  "clients": {
+    "vscode": { "configTemplate": "templates/vscode.json" },
+    "generic": { "supported": true }
+  }
+}
+```
+
+The descriptor should answer four questions:
+
+1. How is the server started?
+2. What env/config does it need?
+3. What kind of capabilities does it expose?
+4. Which clients/scaffolds know how to install or reference it?
+
+### Relationship between skills and MCP servers
+
+Skills should be able to declare optional MCP dependencies in frontmatter:
+
+```yaml
+requires:
+  mcp: [context7, playwright]
+```
+
+Meaning:
+
+- the skill is still valid as a file artifact
+- but the best runtime experience assumes those MCP servers are available
+- scaffolding and validation can use that metadata to provision missing servers automatically
+
+This lets the suite express things like:
+
+- `code-review` may recommend `context7` for API/library documentation lookup
+- `web-research` may recommend `context7` or a search MCP
+- future `frontend-e2e-check` skill may require `playwright`
+- future `nextjs-routing-debug` skill may require `nextjs`
+
+### Where MCP fits in the CLI
+
+The `skill-lib` CLI now includes an MCP surface:
+
+```text
+skill-lib mcp list
+skill-lib mcp info <id>
+skill-lib mcp install <id> [--bundle coding-defaults] [--client vscode] [--target dir]
+skill-lib mcp doctor [--target dir]
+skill-lib mcp bundles
+```
+
+Current semantics:
+
+- `mcp list` — show known server descriptors from `mcp/`
+- `mcp info` — show startup command, env vars, tags, capabilities, supported clients
+- `mcp install` — copy/render client-specific config fragments into the target repo
+- `mcp doctor` — validate binaries, env vars, config files, and connectivity
+- `mcp bundles` — list opinionated MCP sets like `coding-defaults`
+
+### Where MCP fits in the scaffold
+
+`create-turborepo` now supports MCP-aware setup, because that is the right place to make a generated coding workspace immediately useful.
+
+Implemented flags:
+
+```text
+create-turborepo --mcp-bundle coding-defaults
+create-turborepo --mcp context7 --mcp playwright
+create-turborepo --no-mcp
+```
+
+Current default bundle for coding projects:
+
+- `context7`
+- `playwright`
+- `nextjs` when the generated app is Next.js-specific
+- optionally git / filesystem / terminal MCPs depending on client support
+
+Scaffold responsibilities when MCP is enabled:
+
+1. Add root `.github/skills` as today.
+2. Render root `.vscode/mcp.json` for VS Code-compatible clients.
+3. Include env example files or setup notes.
+4. Record enabled MCP servers in project metadata for later validation.
+
+### Project-level config model
+
+Generated projects should have a machine-readable manifest describing what the repo expects:
+
+```json
+{
+  "skills": ["code-review", "pr-description", "web-research"],
+  "mcpServers": ["context7", "playwright"],
+  "bundles": ["coding-defaults"]
+}
+```
+
+This can live in a file like:
+
+- `.skill-lib/project.json`
+
+That gives the suite one place to drive:
+
+- validation
+- re-installation
+- CI checks
+- future editor integrations
+
+### Validation rules
+
+The validator now checks both skill and MCP readiness for scaffolded projects.
+
+Current MCP-aware validation verifies:
+
+- required MCP config exists in the project
+- configured server binaries/commands are present
+- required env vars are documented or set
+- declared `requires.mcp` dependencies from installed skills are satisfied
+
+### Practical product position
+
+The suite should be described as:
+
+- **Skill library** = reusable agent behavior definitions
+- **MCP catalog** = reusable runtime tool backends
+- **Scaffold/installer** = project bootstrap and wiring layer
+
+That framing is important because `context7`, `playwright`, `nextjs`, and similar MCP servers are part of the same workflow, but they solve a different problem than `SKILL.md` files.
+
+The tool should own both, but keep them modeled separately.
+
+---
+
 ## Module Contracts
 
 ### `lib/registry.js`
@@ -96,6 +313,25 @@ exportOne(name, format)                   → tool object
 
 VALID_FORMATS      // ['openai', 'anthropic', 'ollama', 'generic']
 ```
+
+### `lib/mcp-registry.js`
+
+```js
+loadAllMcpServers()      → MpcServer[]
+findMcpServer(id)        → McpServer | null
+loadAllMcpBundles()      → McpBundle[]
+findMcpBundle(id)        → McpBundle | null
+```
+
+### `lib/mcp-installer.js`
+
+```js
+installMcpServers({ ids?, bundles?, client?, targetRoot?, force? }) → boolean
+doctorMcpServers({ ids?, client?, targetRoot? })                    → boolean
+```
+
+- Renders client config into `.vscode/mcp.json` for `vscode`
+- Updates `.skill-lib/project.json` with installed MCP server ids and bundle ids
 
 ### `lib/server.js`
 

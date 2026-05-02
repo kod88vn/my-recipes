@@ -1,0 +1,5 @@
+{
+  "command": "npx",
+  "args": ["ctx7", "setup"],
+  "env": {}
+}

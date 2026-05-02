@@ -3,6 +3,9 @@ import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadAll } from '../lib/registry.js';
+import { loadAllMcpServers, findMcpBundle } from '../lib/mcp-registry.js';
+import { installMcpServers } from '../lib/mcp-installer.js';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(scriptDir, '..');
@@ -27,6 +30,9 @@ function parseArgs(argv){
     target: null,
     useWatt: null,
     doInstall: null,
+    mcp: [],
+    mcpBundles: [],
+    useMcp: true,
   };
 
   for(let i = 0; i < argv.length; i++){
@@ -38,6 +44,9 @@ function parseArgs(argv){
     else if(arg === '--no-watt') options.useWatt = false;
     else if(arg === '--install') options.doInstall = true;
     else if(arg === '--no-install') options.doInstall = false;
+    else if(arg === '--mcp' && argv[i + 1]) options.mcp.push(argv[++i]);
+    else if(arg === '--mcp-bundle' && argv[i + 1]) options.mcpBundles.push(argv[++i]);
+    else if(arg === '--no-mcp') options.useMcp = false;
   }
 
   return options;
@@ -49,7 +58,18 @@ async function question(prompt, def){
   return (q || def || '').trim();
 }
 
-function scaffold({ appName, target, useWatt, doInstall }){
+function resolveMcpSelection({ mcp, mcpBundles, useMcp }) {
+  if (!useMcp) return { mcpServers: [], bundles: [] };
+
+  const bundles = mcpBundles.length > 0 ? [...mcpBundles] : ['coding-defaults'];
+  const fromBundles = bundles.flatMap((bundleId) => findMcpBundle(bundleId)?.servers || []);
+  return {
+    mcpServers: [...new Set([...fromBundles, ...mcp])],
+    bundles,
+  };
+}
+
+function scaffold({ appName, target, useWatt, doInstall, mcp, mcpBundles, useMcp }){
   const cwd = process.cwd();
   const targetPath = path.resolve(cwd, target);
   const templatePath = path.join(packageRoot, 'templates', 'turborepo-starter');
@@ -156,6 +176,28 @@ function scaffold({ appName, target, useWatt, doInstall }){
     }
   }
 
+  const projectMetaDir = path.join(targetPath, '.skill-lib');
+  const projectMetaFile = path.join(projectMetaDir, 'project.json');
+  const allSkills = loadAll().map((skill) => skill.name);
+  const mcpSelection = resolveMcpSelection({ mcp, mcpBundles, useMcp });
+  fs.mkdirSync(projectMetaDir, { recursive: true });
+  fs.writeFileSync(projectMetaFile, JSON.stringify({
+    skills: allSkills,
+    mcpServers: mcpSelection.mcpServers,
+    bundles: mcpSelection.bundles,
+  }, null, 2));
+  console.log('Wrote project metadata to', projectMetaFile);
+
+  if (mcpSelection.mcpServers.length > 0) {
+    installMcpServers({
+      ids: mcpSelection.mcpServers,
+      bundles: mcpSelection.bundles,
+      client: 'vscode',
+      targetRoot: targetPath,
+      force: true,
+    });
+  }
+
   console.log('\nDone. Next steps:');
   console.log('  cd', targetPath);
   if(doInstall) console.log('  npm install');
@@ -193,7 +235,15 @@ async function main(){
     }
   }
 
-  scaffold({ appName, target, useWatt, doInstall });
+  scaffold({
+    appName,
+    target,
+    useWatt,
+    doInstall,
+    mcp: options.mcp,
+    mcpBundles: options.mcpBundles,
+    useMcp: options.useMcp,
+  });
 }
 
 // entry

@@ -1,0 +1,22 @@
+{
+  "id": "context7",
+  "name": "Context7 MCP",
+  "category": "documentation",
+  "description": "Retrieves focused library and framework documentation context for coding tasks.",
+  "tags": ["docs", "reference", "lookup", "coding"],
+  "transport": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["ctx7", "setup"]
+  },
+  "env": [],
+  "capabilities": [
+    "docs.search",
+    "docs.resolve",
+    "docs.fetch"
+  ],
+  "clients": {
+    "vscode": { "supported": true, "configTemplate": "templates/vscode.json" },
+    "generic": { "supported": true }
+  }
+}

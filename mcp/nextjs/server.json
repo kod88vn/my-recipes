@@ -1,0 +1,22 @@
+{
+  "id": "nextjs",
+  "name": "Next.js MCP",
+  "category": "framework",
+  "description": "Framework-aware tooling for Next.js projects, routing, app structure, and framework-specific diagnostics.",
+  "tags": ["nextjs", "react", "framework", "web"],
+  "transport": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["@vercel/nextjs-mcp@latest"]
+  },
+  "env": [],
+  "capabilities": [
+    "framework.routes",
+    "framework.config",
+    "framework.project-info"
+  ],
+  "clients": {
+    "vscode": { "supported": true, "configTemplate": "templates/vscode.json" },
+    "generic": { "supported": true }
+  }
+}

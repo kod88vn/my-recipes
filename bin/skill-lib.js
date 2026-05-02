@@ -3,6 +3,8 @@
 
 import { program, Command } from "commander";
 import { loadAll, find, search } from "../lib/registry.js";
+import { loadAllMcpServers, findMcpServer, loadAllMcpBundles } from "../lib/mcp-registry.js";
+import { installMcpServers, doctorMcpServers } from "../lib/mcp-installer.js";
 import { install, uninstall } from "../lib/installer.js";
 import { scaffold } from "../lib/scaffold.js";
 import { exportAll, exportOne, VALID_FORMATS } from "../lib/exporter.js";
@@ -44,6 +46,31 @@ function printSkillTable(skills) {
     );
   }
   console.log(`\n${DIM}${skills.length} skill(s)${RESET}\n`);
+}
+
+function printMcpTable(servers) {
+  if (servers.length === 0) {
+    console.log(`${DIM}No MCP servers found.${RESET}`);
+    return;
+  }
+
+  const idW = Math.max(2, ...servers.map((s) => s.id.length)) + 2;
+  const catW = Math.max(8, ...servers.map((s) => (s.category || "").length)) + 2;
+
+  console.log(
+    `\n${BOLD}${pad("ID", idW)}${pad("CATEGORY", catW)}DESCRIPTION${RESET}`
+  );
+  console.log("─".repeat(idW + catW + 50));
+
+  for (const server of servers) {
+    const desc = server.description.length > 70
+      ? server.description.slice(0, 67) + "..."
+      : server.description;
+    console.log(
+      `${CYAN}${pad(server.id, idW)}${RESET}${YELLOW}${pad(server.category || "", catW)}${RESET}${desc}`
+    );
+  }
+  console.log(`\n${DIM}${servers.length} MCP server(s)${RESET}\n`);
 }
 
 // ─── list ─────────────────────────────────────────────────────────────────────
@@ -195,6 +222,99 @@ program
   .option("--host <host>",     "Host to bind to", "127.0.0.1")
   .action((opts) => {
     createSkillServer({ port: Number(opts.port), host: opts.host });
+  });
+
+// ─── mcp ─────────────────────────────────────────────────────────────────────
+
+const mcp = program
+  .command("mcp")
+  .description("Inspect bundled MCP server descriptors");
+
+mcp
+  .command("list")
+  .description("List bundled MCP servers")
+  .action(() => {
+    printMcpTable(loadAllMcpServers());
+  });
+
+mcp
+  .command("info <id>")
+  .description("Show full details of an MCP server descriptor")
+  .action((id) => {
+    const server = findMcpServer(id);
+    if (!server) {
+      console.error(`MCP server not found: ${id}`);
+      process.exit(1);
+    }
+
+    console.log(`\n${BOLD}${CYAN}${server.name}${RESET}  ${DIM}(${server.id})${RESET}`);
+    console.log(server.description);
+    if (server.category) console.log(`${DIM}Category: ${server.category}${RESET}`);
+    if (server.tags?.length) console.log(`${DIM}Tags: ${server.tags.join(", ")}${RESET}`);
+    if (server.transport) {
+      const args = Array.isArray(server.transport.args) ? server.transport.args.join(" ") : "";
+      console.log(`${DIM}Transport: ${server.transport.type} -> ${server.transport.command || ""} ${args}`.trim() + `${RESET}`);
+    }
+    if (server.capabilities?.length) {
+      console.log(`\n${BOLD}Capabilities${RESET}`);
+      server.capabilities.forEach((capability) => console.log(`- ${capability}`));
+    }
+    if (server.env?.length) {
+      console.log(`\n${BOLD}Environment${RESET}`);
+      server.env.forEach((item) => console.log(`- ${item.name}${item.required ? " (required)" : ""}`));
+    }
+    if (server.clients) {
+      console.log(`\n${BOLD}Clients${RESET}`);
+      Object.entries(server.clients).forEach(([client, config]) => {
+        console.log(`- ${client}: ${config.supported === false ? "not supported" : "supported"}`);
+      });
+    }
+    console.log();
+  });
+
+mcp
+  .command("install [ids...]")
+  .description("Install MCP server config into a target project")
+  .option("--bundle <name>", "Install an MCP bundle", (value, items) => { items.push(value); return items; }, [])
+  .option("--client <client>", "Target client config to render", "vscode")
+  .option("--target <dir>", "Target project root (default: nearest .git)")
+  .option("-f, --force", "Overwrite existing MCP config entries")
+  .action((ids, opts) => {
+    const ok = installMcpServers({
+      ids,
+      bundles: opts.bundle,
+      client: opts.client,
+      targetRoot: opts.target,
+      force: opts.force,
+    });
+    if (!ok) process.exit(1);
+  });
+
+mcp
+  .command("doctor [ids...]")
+  .description("Validate MCP config, commands, and required env vars")
+  .option("--client <client>", "Client config to inspect", "vscode")
+  .option("--target <dir>", "Target project root (default: nearest .git)")
+  .action((ids, opts) => {
+    const ok = doctorMcpServers({ ids, client: opts.client, targetRoot: opts.target });
+    if (!ok) process.exit(1);
+  });
+
+mcp
+  .command("bundles")
+  .description("List bundled MCP server sets")
+  .action(() => {
+    const bundles = loadAllMcpBundles();
+    if (bundles.length === 0) {
+      console.log(`${DIM}No MCP bundles found.${RESET}`);
+      return;
+    }
+    console.log(`\n${BOLD}BUNDLE               SERVERS${RESET}`);
+    console.log("─".repeat(60));
+    bundles.forEach((bundle) => {
+      console.log(`${CYAN}${pad(bundle.id, 20)}${RESET}${(bundle.servers || []).join(", ")}`);
+    });
+    console.log();
   });
 
 // ─── run ──────────────────────────────────────────────────────────────────────

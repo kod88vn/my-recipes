@@ -4,6 +4,7 @@ import path from 'path';
 
 function exists(p){ try{ return fs.existsSync(p); } catch(e){ return false } }
 function isSymlink(p){ try{ return fs.lstatSync(p).isSymbolicLink(); } catch(e){ return false } }
+function readJSON(p){ try{ return JSON.parse(fs.readFileSync(p, 'utf8')); } catch(e){ return null } }
 
 function check(root){
   const report = { ok: true, missing: [] };
@@ -18,6 +19,28 @@ function check(root){
     }catch(e){ report.ok = false; report.missing.push('root package.json (invalid JSON)'); }
   }
 
+  const projectManifest = path.join(root, '.skill-lib', 'project.json');
+  if(!exists(projectManifest)) {
+    report.ok = false;
+    report.missing.push('root .skill-lib/project.json');
+  }
+  const manifest = readJSON(projectManifest) || { mcpServers: [] };
+  const vscodeMcp = path.join(root, '.vscode', 'mcp.json');
+  if((manifest.mcpServers || []).length > 0) {
+    if(!exists(vscodeMcp)) {
+      report.ok = false;
+      report.missing.push('root .vscode/mcp.json');
+    } else {
+      const mcpConfig = readJSON(vscodeMcp) || { servers: {} };
+      for (const id of manifest.mcpServers || []) {
+        if(!mcpConfig.servers || !mcpConfig.servers[id]) {
+          report.ok = false;
+          report.missing.push(`root .vscode/mcp.json missing server ${id}`);
+        }
+      }
+    }
+  }
+
   const apps = path.join(root, 'apps');
   if(!exists(apps)) { report.ok = false; report.missing.push('apps/ folder'); return report; }
 
@@ -26,6 +49,7 @@ function check(root){
   else {
     if(!exists(path.join(libApp,'bin','skill-lib.js'))) { report.ok = false; report.missing.push('apps/ai-skill-library/bin/skill-lib.js'); }
     if(!exists(path.join(libApp,'lib'))) { report.ok = false; report.missing.push('apps/ai-skill-library/lib/'); }
+    if(!exists(path.join(libApp,'mcp'))) { report.ok = false; report.missing.push('apps/ai-skill-library/mcp/'); }
     if(!exists(path.join(libApp,'skills'))) { report.ok = false; report.missing.push('apps/ai-skill-library/skills/'); }
     if(!exists(path.join(libApp,'ui','app.py'))) { report.ok = false; report.missing.push('apps/ai-skill-library/ui/app.py'); }
   }
