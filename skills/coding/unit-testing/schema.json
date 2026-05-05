@@ -1,0 +1,12 @@
+{
+  "input": {
+    "type": "object",
+    "properties": {
+      "target": {
+        "type": "string",
+        "description": "File, function, module, or feature to write tests for"
+      }
+    },
+    "required": ["target"]
+  }
+}

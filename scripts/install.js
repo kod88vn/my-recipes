@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // install.js — copies skills from this package into a consumer project's .github/skills/
 
-import { cpSync, mkdirSync, readdirSync, existsSync } from "fs";
+import { cpSync, mkdirSync, readdirSync, existsSync, lstatSync } from "fs";
 import { join, resolve } from "path";
 import { fileURLToPath } from "url";
 
@@ -20,10 +20,22 @@ function findProjectRoot(start) {
 
 const targetRoot = process.argv[2]
   ? resolve(process.argv[2])
-  : findProjectRoot(process.cwd());
+  : findProjectRoot(process.env.INIT_CWD || process.cwd());
+
+// Skip when running as a transitive dependency inside node_modules
+if (targetRoot.includes("node_modules")) {
+  process.exit(0);
+}
 
 const skillsSrc = join(__dirname, "..", "skills");
 const skillsDest = join(targetRoot, ".github", "skills");
+
+// Skip if skills are already linked or installed at the destination (handles broken symlinks too)
+let destExists = false;
+try { lstatSync(skillsDest); destExists = true; } catch {}
+if (destExists) {
+  process.exit(0);
+}
 
 mkdirSync(skillsDest, { recursive: true });
 

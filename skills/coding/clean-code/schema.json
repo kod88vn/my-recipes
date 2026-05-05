@@ -1,0 +1,67 @@
+{
+  "input": {
+    "type": "object",
+    "properties": {
+      "target": {
+        "type": "string",
+        "description": "File path(s), module, or feature to refactor"
+      },
+      "goals": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "single-responsibility",
+            "dry",
+            "abstraction-layers",
+            "no-mixed-detail-levels",
+            "split-large-files"
+          ]
+        },
+        "description": "Clean code goals to prioritize"
+      },
+      "constraints": {
+        "type": "string",
+        "description": "Behavior, API, or compatibility constraints"
+      }
+    },
+    "required": ["target"]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "responsibility_map": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "How responsibilities are separated after refactor"
+      },
+      "deduplications": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Duplicate logic removed or consolidated"
+      },
+      "abstraction_changes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Boundary and abstraction-layer improvements"
+      },
+      "files_changed": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "verification": {
+        "type": "string",
+        "description": "Tests/lint checks run to verify behavior preservation"
+      }
+    },
+    "required": ["files_changed"]
+  }
+}
