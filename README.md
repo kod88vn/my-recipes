@@ -9,6 +9,17 @@ AI skill + MCP catalog with a scaffold CLI for creating ready-to-use coding work
 - `skill-lib` CLI for skills + MCP workflows
 - `create-turborepo` CLI for generating a working monorepo scaffold
 
+## Notable workflow skills
+
+- `context-compression` for shrinking long prompt files, notes, and markdown-heavy context without touching code or commands
+- `terse-communication` for lower-token, execution-first answers when the user wants brevity
+
+Run local context compression directly with Python:
+
+```bash
+python3 skills/workflow/context-compression/scripts/cli.py /path/to/file.md
+```
+
 ## Quick Start
 
 ```bash

@@ -35,6 +35,19 @@ skills/<category>/<name>/
 - `<name>` must be lowercase-hyphen, 1–64 characters, matching the `name` field in frontmatter.
 - `<category>` is a free-form grouping (e.g. `coding`, `research`, `management`, `writing`).
 
+### Current first-party workflow skill themes
+
+The repository currently includes workflow skills for:
+
+- documentation upkeep and living design docs
+- MCP-aware repository and scaffold usage
+- Playwright-based UI verification and subagent orchestration
+- context compression for long markdown or prompt artifacts
+- terse communication when output needs to stay technically accurate but shorter
+
+For context compression, the repository also ships a local Python pipeline at
+`skills/workflow/context-compression/scripts/` with detect, validate, and CLI modules.
+
 ### `SKILL.md` frontmatter fields
 
 | Field | Required | Description |
