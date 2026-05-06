@@ -1,0 +1,58 @@
+{
+  "input": {
+    "type": "object",
+    "properties": {
+      "target": {
+        "type": "string",
+        "description": "Component file(s) or feature to audit or refactor"
+      },
+      "goals": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "extract-api-calls",
+            "extract-hooks",
+            "extract-utils",
+            "audit-only"
+          ]
+        },
+        "description": "Which extraction steps to prioritize"
+      },
+      "constraints": {
+        "type": "string",
+        "description": "Behavior, API, or compatibility constraints to preserve"
+      }
+    },
+    "required": ["target"]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "violations_found": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "List of concerns that were inline in the component and needed extraction"
+      },
+      "files_created": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "New data-access, hook, or utility files created"
+      },
+      "files_changed": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Existing files modified"
+      },
+      "tests_added": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Tests written for extracted modules"
+      },
+      "verification": {
+        "type": "string",
+        "description": "Test run result or manual verification summary"
+      }
+    }
+  }
+}
