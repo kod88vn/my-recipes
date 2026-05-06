@@ -1,0 +1,46 @@
+{
+  "input": {
+    "type": "object",
+    "properties": {
+      "target": {
+        "type": "string",
+        "description": "Project, module, or feature to document"
+      },
+      "scope": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["design-doc", "adr", "refresh-readme", "refresh-guides", "full-package"]
+        },
+        "description": "Which documentation artifacts to produce (default: full-package)"
+      },
+      "decisions": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Specific architecture decisions to record as ADRs"
+      }
+    },
+    "required": ["target"]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "files_created": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "New documentation files created"
+      },
+      "files_updated": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Existing documentation files refreshed"
+      },
+      "adrs": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "ADR IDs created (e.g. ADR-001, ADR-002)"
+      }
+    },
+    "required": ["files_created", "files_updated"]
+  }
+}
